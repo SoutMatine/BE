@@ -5,9 +5,13 @@ from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 
 import database as db
-from config import REVIEW_INTERVALS
+from config import REVIEW_INTERVALS, ALLOWED_USERS
+
+async def is_allowed(message: Message) -> bool:
+    return message.from_user.id in ALLOWED_USERS
 
 router = Router()
+router.message.filter(is_allowed)
 
 # ── Состояния FSM ──────────────────────────────────────────────────────────────
 
