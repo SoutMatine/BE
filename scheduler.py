@@ -9,16 +9,18 @@ logger = logging.getLogger(__name__)
 
 
 async def send_reminders(bot: Bot):
-    """Каждые 30 минут проверяем — у кого есть слова на повторение."""
     try:
         users = await db.get_all_due_users()
         for user_row in users:
             user_id = user_row["user_id"]
             due_words = await db.get_due_words(user_id)
-            if not due_words:
+            # Только те у кого reminded = 0
+            new_due = [w for w in due_words if not w.get("reminded")]
+            if not new_due:
                 continue
-            count = len(due_words)
-            word_examples = ", ".join(w["word"] for w in due_words[:3])
+
+            count = len(new_due)
+            word_examples = ", ".join(w["word"] for w in new_due[:3])
             if count > 3:
                 word_examples += f" и ещё {count - 3}..."
 
@@ -31,6 +33,8 @@ async def send_reminders(bot: Bot):
                     f"Используй /review чтобы начать.",
                     parse_mode="HTML"
                 )
+                # Помечаем — уже напомнили
+                await db.mark_reminded([w["id"] for w in new_due])
             except Exception as e:
                 logger.warning(f"Не удалось отправить напоминание {user_id}: {e}")
     except Exception as e:
@@ -47,5 +51,4 @@ async def start_scheduler(bot: Bot) -> AsyncIOScheduler:
         replace_existing=True,
     )
     scheduler.start()
-    logger.info("Scheduler started (check every 30 min)")
     return scheduler
