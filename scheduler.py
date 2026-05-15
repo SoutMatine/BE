@@ -45,7 +45,7 @@ async def start_scheduler(bot: Bot) -> AsyncIOScheduler:
     scheduler = AsyncIOScheduler()
     scheduler.add_job(
         send_reminders,
-        trigger=IntervalTrigger(minutes=30),
+        trigger=IntervalTrigger(minutes=15),
         args=[bot],
         id="reminder_job",
         replace_existing=True,
