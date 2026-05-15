@@ -101,7 +101,7 @@ async def process_translation(message: Message, state: FSMContext):
     await message.answer(
         f"✅ Сохранено!\n\n"
         f"🇬🇧 <b>{word}</b> — 🇷🇺 {translation}\n\n"
-        f"⏰ Первое повторение через <b>{REVIEW_INTERVALS[0]} час</b>.",
+        f"⏰ Первое повторение через <b>{REVIEW_INTERVALS[0]} минут</b>.",
         parse_mode="HTML"
     )
 
@@ -236,16 +236,16 @@ async def cmd_stats(message: Message):
 
 def _fmt_interval(minutes: int) -> str:
     if minutes < 60:
-        return f"{minutes} мин."
+        return f"{minutes} минут"
     elif minutes < 1440:
         hours = minutes // 60
         mins = minutes % 60
         if mins:
-            return f"{hours} ч. {mins} мин."
-        return f"{hours} ч."
+            return f"{hours} часов {mins} минут"
+        return f"{hours} часов"
     else:
         days = minutes // 1440
-        return f"{days} дн."
+        return f"{days} дней"
 
 
 def _close_enough(answer: str, correct: str) -> bool:
