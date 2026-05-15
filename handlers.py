@@ -5,13 +5,9 @@ from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 
 import database as db
-from config import REVIEW_INTERVALS, ALLOWED_USERS
-
-async def is_allowed(message: Message) -> bool:
-    return message.from_user.id in ALLOWED_USERS
+from config import REVIEW_INTERVALS
 
 router = Router()
-router.message.filter(is_allowed)
 
 # ── Состояния FSM ──────────────────────────────────────────────────────────────
 
@@ -29,7 +25,7 @@ class ReviewWord(StatesGroup):
 async def cmd_start(message: Message):
     await db.add_user(message.from_user.id, message.from_user.username)
     await message.answer(
-        "👋 Привет!\n\n"
+        "👋 Привет! Я помогу тебе учить английские слова методом интервального повторения.\n\n"
         "📚 <b>Команды:</b>\n"
         "/add — добавить новое слово\n"
         "/review — повторить слова\n"
@@ -44,7 +40,7 @@ async def cmd_help(message: Message):
     await message.answer(
         "📖 <b>Как это работает:</b>\n\n"
         "1. Добавь слово командой /add\n"
-        "2. Бот попросит перевод - введи его\n"
+        "2. Бот попросит перевод — введи его\n"
         "3. В нужное время бот пришлёт напоминание\n"
         "4. Ты пишешь перевод (или «я не помню»)\n\n"
         "⏱ <b>Интервалы повторения:</b>\n"
@@ -105,7 +101,7 @@ async def process_translation(message: Message, state: FSMContext):
     await message.answer(
         f"✅ Сохранено!\n\n"
         f"🇬🇧 <b>{word}</b> — 🇷🇺 {translation}\n\n"
-        f"⏰ Первое повторение через <b>{REVIEW_INTERVALS[0]} минут</b>.",
+        f"⏰ Первое повторение через <b>{REVIEW_INTERVALS[0]} час</b>.",
         parse_mode="HTML"
     )
 
@@ -170,6 +166,7 @@ async def process_review_answer(message: Message, state: FSMContext):
     if forgot:
         remembered = False
         await db.update_word_stage(word_data["id"], remembered=False)
+        await db.reset_reminded(word_data["id"])
         interval = REVIEW_INTERVALS[word_data["stage"]]
         await message.answer(
             f"😔 Не страшно!\n"
