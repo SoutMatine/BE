@@ -20,6 +20,7 @@ async def init_db():
                 translation TEXT NOT NULL,
                 stage INTEGER DEFAULT 0,
                 next_review TEXT NOT NULL,
+                reminded INTEGER DEFAULT 0,
                 added_at TEXT DEFAULT (datetime('now')),
                 FOREIGN KEY (user_id) REFERENCES users(user_id)
             )
@@ -71,12 +72,13 @@ async def get_due_words(user_id: int) -> list[dict]:
 
 
 async def get_all_due_users() -> list[dict]:
+
     """Получить всех пользователей у которых есть слова на повторение."""
     now = datetime.utcnow().isoformat()
     async with aiosqlite.connect(DB_PATH) as db:
         db.row_factory = aiosqlite.Row
         async with db.execute(
-            "SELECT DISTINCT user_id FROM words WHERE next_review <= ?",
+            "SELECT DISTINCT user_id FROM words WHERE next_review <= ? AND reminded = 0",
             (now,)
         ) as cursor:
             rows = await cursor.fetchall()
@@ -102,8 +104,8 @@ async def update_word_stage(word_id: int, remembered: bool):
         else:
             new_stage = stage  # не сдвигаем стадию
 
-        interval_minutes  = REVIEW_INTERVALS[new_stage]
-        next_review = datetime.utcnow() + timedelta(minutes=interval_minutes )
+        interval_minutes = REVIEW_INTERVALS[new_stage]
+        next_review = datetime.utcnow() + timedelta(minutes=interval_minutes)
 
         await db.execute(
             "UPDATE words SET stage = ?, next_review = ? WHERE id = ?",
@@ -131,3 +133,17 @@ async def get_user_stats(user_id: int) -> dict:
         ) as cursor:
             recent = await cursor.fetchall()
     return {"total": total, "learned": learned, "due": due, "recent": recent}
+
+async def mark_reminded(word_ids: list[int]):
+    async with aiosqlite.connect(DB_PATH) as db:
+        await db.executemany(
+            "UPDATE words SET reminded = 1 WHERE id = ?",
+            [(wid,) for wid in word_ids]
+        )
+        await db.commit()
+
+async def reset_reminded(word_id: int):
+    """Сбросить флаг после повторения — чтобы следующий цикл снова напомнил."""
+    async with aiosqlite.connect(DB_PATH) as db:
+        await db.execute("UPDATE words SET reminded = 0 WHERE id = ?", (word_id,))
+        await db.commit()
