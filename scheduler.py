@@ -15,7 +15,7 @@ async def send_reminders(bot: Bot):
             user_id = user_row["user_id"]
             due_words = await db.get_due_words(user_id)
             # Только те у кого reminded = 0
-            new_due = [w for w in due_words if not w.get("reminded")]
+            new_due = [w for w in due_words if w.get("reminded") == 0]
             if not new_due:
                 continue
 
@@ -45,7 +45,7 @@ async def start_scheduler(bot: Bot) -> AsyncIOScheduler:
     scheduler = AsyncIOScheduler()
     scheduler.add_job(
         send_reminders,
-        trigger=IntervalTrigger(minutes=15),
+        trigger=IntervalTrigger(minutes=30),
         args=[bot],
         id="reminder_job",
         replace_existing=True,
