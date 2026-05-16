@@ -25,7 +25,7 @@ class ReviewWord(StatesGroup):
 async def cmd_start(message: Message):
     await db.add_user(message.from_user.id, message.from_user.username)
     await message.answer(
-        "👋 Привет! Я помогу тебе учить английские слова методом интервального повторения.\n\n"
+        "👋 Привет!\n\n"
         "📚 <b>Команды:</b>\n"
         "/add — добавить новое слово\n"
         "/review — повторить слова\n"
